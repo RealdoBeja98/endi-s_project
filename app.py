@@ -6,6 +6,10 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from datetime import datetime
 from passlib.hash import sha256_crypt
+
+
+
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '493753003b7f9dc144cf6de900193330'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site1.db'
@@ -72,18 +76,34 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         #hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        username_already_in_db = User.query.filter_by(username=form.username.data).first()
+        email_already_in_db =  User.query.filter_by(email=form.email.data).first()
+
+        if username_already_in_db or email_already_in_db:
+            flash(f'Credentials already in use.', 'error')    
+            return redirect(url_for('register'))
+        else:
+            add_to_table_user(form)
+            return redirect(url_for('login'))
+        #if email_already_in_db:
+        #    flash(f'Email already in use.', 'error')    
+        #    return redirect(url_for('register'))
+        #else:
+        #    add_to_table_user(form)
         
-        secure_password = sha256_crypt.encrypt(str(form.password.data))
-        user = User(username=form.username.data, email=form.email.data, password=secure_password)
-        db.session.add(user)
-        db.session.commit()
-        
-        flash(f'Account created!', 'success')
-        return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
 
+def add_to_table_user(form):
+    secure_password = sha256_crypt.encrypt(str(form.password.data))
+    user = User(username=form.username.data, email=form.email.data, password=secure_password)
+    db.session.add(user)
+    db.session.commit()
+    flash(f'Account created!', 'success')
+    
+    return
 
 
+    
 @app.route('/login')
 def login():
     form = LoginForm()
