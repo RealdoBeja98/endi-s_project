@@ -53,6 +53,7 @@ class Post(db.Model):
 @app.route("/")
 @app.route("/home")
 def home():
+    form = PostForm
     posts = Post.query.order_by(Post.date_posted.desc()).all()
     return render_template('home.html', posts=posts, title='Home')
 
