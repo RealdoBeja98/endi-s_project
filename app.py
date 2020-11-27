@@ -43,17 +43,24 @@ class Post(db.Model):
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow )
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    comments = db.relationship('Comment', backref='post_father', lazy=True)
 
     def __repr__(self):
         return f"Post('{self.title}', '{self.date_posted}')"
         
-
-
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow )
+    content = db.Column(db.Text, nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+ 
+    def __repr__(self):
+         return f"Comment('{self.content}')"
 
 @app.route("/")
 @app.route("/home")
 def home():
-    form = PostForm
+    form = PostForm()
     posts = Post.query.order_by(Post.date_posted.desc()).all()
     return render_template('home.html', posts=posts, title='Home')
 
@@ -67,7 +74,7 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = RegistrationForm()
-    if form.validate_on_submit():
+    if form.validate_999on_submit():
         #hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         username_already_in_db = User.query.filter_by(username=form.username.data).first()
         email_already_in_db =  User.query.filter_by(email=form.email.data).first()
