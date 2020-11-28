@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, url_for, flash, redirect, abort
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
-from forms import RegistrationForm, LoginForm, UpdateAccountForm, PostForm
+from forms import RegistrationForm, LoginForm, UpdateAccountForm, PostForm, CommentForm
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from datetime import datetime
@@ -31,7 +31,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(60),nullable=False)
     posts = db.relationship('Post', backref='author', lazy=True)
-
+    user_comments = db.relationship('Comment', backref='author_comment', lazy=True)
 
     def __repr__(self):
         return f"User('{self.username}', '{self.email}')"
@@ -43,19 +43,35 @@ class Post(db.Model):
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow )
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    #post_comments = db.relationship('Comment', backref='title_of_post', lazy=True)
 
     def __repr__(self):
         return f"Post('{self.title}', '{self.date_posted}')"
         
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    body = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    #post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    comment_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
+    def __repr__(self):
+        return f"Comment('{self.body}')"
 
 
 @app.route("/")
-@app.route("/home")
+@app.route("/home", methods=['GET', 'POST'])
 def home():
-    form = PostForm
+    form = PostForm()
+    comment_form = CommentForm()
     posts = Post.query.order_by(Post.date_posted.desc()).all()
-    return render_template('home.html', posts=posts, title='Home')
+    if comment_form.validate_on_submit():
+        reply = Comment(body=comment_form.comment_on_form.data, author_comment=current_user)
+        db.session.add(reply)
+        db.session.commit()
+        
+    replies = Comment.query.filter_by(author_comment=current_user).order_by(Comment.timestamp.desc()).all()  
+    return render_template('home.html', posts=posts, title='Home', form=form, comment_form=comment_form, replies=replies)
 
 @app.route("/about")
 def about():

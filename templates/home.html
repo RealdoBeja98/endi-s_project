@@ -1,16 +1,54 @@
 {% extends "layout.html" %}
 {% block content %}
-
-    {% for post in posts %}   
+    {% for post in posts %}
         <article class="media content-section">
-            <div class="media-body">
-                <div class="article-metadata">
-                    <a class="mr-2" href="{{url_for('user_posts', username=post.author.username) }}">{{ post.author.username }}</a>
-                    <small class="text-muted">{{ post.date_posted.strftime('%d-%m-%Y') }}</small>
+          <div class="media-body">
+            <div class="article-metadata">
+              <a class="mr-2" href="#">{{ post.author }}</a>
+              <small class="text-muted">{{ post.date_posted }}</small>
+            </div>
+            <h2><a class="article-title" href="#">{{ post.title }}</a></h2>
+            <p class="article-content">{{ post.content }}</p>
+            {% if current_user.is_authenticated %}
+                {% for reply in replies %}
+                    <article class="media content-section">
+                        <div class="media-body">
+                            <p class="article-content">{{ reply.body }}</p>
+                        </div>
+                    </article>
+                {% endfor%}
+                <div class="content-section">
+                
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        <fieldset class="form-group">
+                            <div class="form-group">
+                                {{ comment_form.comment_on_form.label(class="form-control-label") }}
+                                {% if comment_form.comment_on_form.errors %}
+                                    {{ comment_form.comment_on_form(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in comment_form.comment_on_form.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ comment_form.comment_on_form(class="form-control form-control-lg") }}
+                                {% endif %}
+                            </div>
+                        </fieldset>
+                        <div class="form-group">
+                            {{ comment_form.submit(class="btn btn-outline-info") }}
+                        </div>
+                    </form>
+                    {% endif %}
                 </div>
-                <h2><a class="article-title" href="{{url_for('post', post_id=post.id)}}">{{ post.title }}</a></h2>
-                <p class="article-content">{{ post.content }}</p>
-              
-    {% endfor %}
 
-{% endblock %}
+
+
+
+
+            </div>
+        </article>
+       
+    {% endfor %}
+{% endblock content %}
