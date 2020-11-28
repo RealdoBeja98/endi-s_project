@@ -61,6 +61,7 @@ class Comment(db.Model):
 
 @app.route("/")
 @app.route("/home", methods=['GET', 'POST'])
+@login_required
 def home():
     form = PostForm()
     comment_form = CommentForm()
@@ -83,7 +84,7 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = RegistrationForm()
-    if form.validate_999on_submit():
+    if form.validate_on_submit():
         #hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         username_already_in_db = User.query.filter_by(username=form.username.data).first()
         email_already_in_db =  User.query.filter_by(email=form.email.data).first()
