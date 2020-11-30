@@ -7,8 +7,6 @@ from flask_bcrypt import Bcrypt
 from datetime import datetime
 from flask_login import LoginManager, login_required, UserMixin, login_user, current_user, logout_user
 
-
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '493753003b7f9dc144cf6de900193330'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site1.db'
@@ -43,7 +41,7 @@ class Post(db.Model):
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow )
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    #post_comments = db.relationship('Comment', backref='title_of_post', lazy=True)
+    post_comments = db.relationship('Comment', backref='title_of_post', lazy=True)
 
     def __repr__(self):
         return f"Post('{self.title}', '{self.date_posted}')"
@@ -52,7 +50,7 @@ class Comment(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     body = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    #post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     comment_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def __repr__(self):
@@ -190,11 +188,19 @@ def delete_post(post_id):
     return redirect(url_for('home'))
 
 
-@app.route("/user/<string:username>")
+@app.route("/user/<string:username>", methods=['GET', 'POST'])
 def user_posts(username):
+    form = PostForm()
+    comment_form = CommentForm()
     user = User.query.filter_by(username=username).first_or_404()
     posts = Post.query.filter_by(author=user).order_by(Post.date_posted.desc()).all()
-    return render_template('user_post.html', posts=posts, user=user)
+    if comment_form.validate_on_submit():
+        reply = Comment(body=comment_form.comment_on_form.data, author_comment=current_user)
+        db.session.add(reply)
+        db.session.commit()
+        
+    replies = Comment.query.filter_by(author_comment=current_user).order_by(Comment.timestamp.desc()).all()  
+    return render_template('user_post.html', form=form, replies=replies, posts=posts, user=user, comment_form=comment_form)
 
 
 def add_post_in_post_tab(form, current_user):

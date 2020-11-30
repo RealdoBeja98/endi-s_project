@@ -10,15 +10,45 @@
                 </div>
                 <h2><a class="article-title" href="{{url_for('post', post_id=post.id)}}">{{ post.title }}</a></h2>
                 <p class="article-content">{{ post.content }}</p>
+                {% for reply in replies %}
+                    <article class="media content-section">
+                        <div class="media-body">
+                        <div class="article-metadata">
+                            <a class="mr-2" href="{{url_for('user_posts', username=post.author.username) }}">{{ reply.author_comment.username }}</a>
+                            <small class="text-muted">{{ reply.timestamp.strftime('%d-%m-%Y') }}</small>
+                        </div>
+                            <p class="article-content">{{ reply.body }}</p>
+                        </div>
+                    </article> 
+                {% endfor %}
+                <div class="content-section">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        <fieldset class="form-group">
+                            <div class="form-group">
+                                {{ comment_form.comment_on_form.label(class="form-control-label") }}
+                                {% if comment_form.comment_on_form.errors %}
+                                    {{ comment_form.comment_on_form(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in comment_form.comment_on_form.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ comment_form.comment_on_form(class="form-control form-control-lg") }}
+                                {% endif %}
+                            </div>
+                        </fieldset>
+                        <div class="form-group">
+                            {{ comment_form.submit(class="btn btn-outline-info") }}
+                        </div>
+                    </form>
+                    
+                </div>
+
             </div>
         </article>
-        {% for reply in replies %}
-            <article class="media content-section">
-                <div class="media-body">
-                    <p class="article-content">{{ reply.body }}</p>
-                </div>
-            </article> 
-        {% endfor %}
+        
     {% endfor %}
 
 {% endblock %}

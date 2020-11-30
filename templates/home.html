@@ -13,12 +13,13 @@
                 {% for reply in replies %}
                     <article class="media content-section">
                         <div class="media-body">
+                             <a class="mr-2" href="{{url_for('user_posts', username=post.author.username)}}">{{ reply.author_comment.username }}</a>
+                             <small class="text-muted">{{ reply.timestamp.strftime('%d-%m-%Y') }}</small>
                             <p class="article-content">{{ reply.body }}</p>
                         </div>
                     </article>
                 {% endfor%}
                 <div class="content-section">
-                
                     <form method="POST" action="">
                         {{ form.hidden_tag() }}
                         <fieldset class="form-group">
