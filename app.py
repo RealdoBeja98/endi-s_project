@@ -7,7 +7,12 @@ from flask_bcrypt import Bcrypt
 from datetime import datetime
 from flask_login import LoginManager, login_required, UserMixin, login_user, current_user, logout_user
 
+
+
 app = Flask(__name__)
+app.config['ENV'] = 'development'
+app.config['DEBUG'] = True
+app.config['TESTING'] = True
 app.config['SECRET_KEY'] = '493753003b7f9dc144cf6de900193330'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site1.db'
 bcrypt = Bcrypt(app)
@@ -51,7 +56,7 @@ class Comment(db.Model):
     body = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
-    comment_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    comment_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def __repr__(self):
         return f"Comment('{self.body}')"
@@ -65,12 +70,27 @@ def home():
     comment_form = CommentForm()
     posts = Post.query.order_by(Post.date_posted.desc()).all()
     if comment_form.validate_on_submit():
+        id_of_post = get_post_id()
+        print(id_of_post)
         reply = Comment(body=comment_form.comment_on_form.data, author_comment=current_user)
         db.session.add(reply)
         db.session.commit()
         
     replies = Comment.query.filter_by(author_comment=current_user).order_by(Comment.timestamp.desc()).all()  
     return render_template('home.html', posts=posts, title='Home', form=form, comment_form=comment_form, replies=replies)
+
+@app.route("/post/new", methods=['GET', 'POST'])
+@login_required
+def new_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        id_of_post = add_post_in_post_tab(form, current_user)
+        def get_post_id(id_of_post):
+            return id_of_post
+        return redirect(url_for('home'))
+    return render_template('create_post.html', title='New Post',
+                           form=form, legend='New Post')
+
 
 @app.route("/about")
 def about():
@@ -141,15 +161,6 @@ def account():
     return render_template('account.html', title='Account',
                            form=form)
 
-@app.route("/post/new", methods=['GET', 'POST'])
-@login_required
-def new_post():
-    form = PostForm()
-    if form.validate_on_submit():
-        add_post_in_post_tab(form, current_user)
-        return redirect(url_for('home'))
-    return render_template('create_post.html', title='New Post',
-                           form=form, legend='New Post')
 
 @app.route("/post/<int:post_id>")
 def post(post_id):
@@ -207,7 +218,7 @@ def add_post_in_post_tab(form, current_user):
     post = Post(title=form.title.data, content=form.content.data, author=current_user)
     db.session.add(post)
     db.session.commit()
-    return
+    return post.id
 
 def add_to_table_user(form):
     secure_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
