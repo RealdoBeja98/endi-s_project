@@ -70,8 +70,7 @@ def home():
     comment_form = CommentForm()
     posts = Post.query.order_by(Post.date_posted.desc()).all()
     if comment_form.validate_on_submit():
-        id_of_post = get_post_id()
-        print(id_of_post)
+        
         reply = Comment(body=comment_form.comment_on_form.data, author_comment=current_user)
         db.session.add(reply)
         db.session.commit()
@@ -84,9 +83,8 @@ def home():
 def new_post():
     form = PostForm()
     if form.validate_on_submit():
-        id_of_post = add_post_in_post_tab(form, current_user)
-        def get_post_id(id_of_post):
-            return id_of_post
+        id_of_post = add_post_in_post_tab_and_get_post_id(form, current_user)
+        
         return redirect(url_for('home'))
     return render_template('create_post.html', title='New Post',
                            form=form, legend='New Post')
@@ -214,7 +212,7 @@ def user_posts(username):
     return render_template('user_post.html', form=form, replies=replies, posts=posts, user=user, comment_form=comment_form)
 
 
-def add_post_in_post_tab(form, current_user):
+def add_post_in_post_tab_and_get_post_id(form, current_user):
     post = Post(title=form.title.data, content=form.content.data, author=current_user)
     db.session.add(post)
     db.session.commit()
