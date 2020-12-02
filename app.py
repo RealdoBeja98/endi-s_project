@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, flash, redirect, abort
+from flask import Flask, render_template, request, url_for, flash, redirect, abort, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from forms import RegistrationForm, LoginForm, UpdateAccountForm, PostForm, CommentForm
@@ -19,6 +19,7 @@ bcrypt = Bcrypt(app)
 login_menager = LoginManager(app)
 login_menager.login_view = 'login'
 login_menager.login_message_category = 'info'
+
 
 db = SQLAlchemy(app)
 
@@ -69,13 +70,13 @@ def home():
     form = PostForm()
     comment_form = CommentForm()
     posts = Post.query.order_by(Post.date_posted.desc()).all()
+    post_id_for_replies = session.get('return_id_of_post', None)
     if comment_form.validate_on_submit():
-        
-        reply = Comment(body=comment_form.comment_on_form.data, author_comment=current_user)
+        reply = Comment(body=comment_form.comment_on_form.data, post_id=post_id_for_replies, author_comment=current_user)
         db.session.add(reply)
         db.session.commit()
-        
-    replies = Comment.query.filter_by(author_comment=current_user).order_by(Comment.timestamp.desc()).all()  
+
+    replies = Comment.query.filter_by(title_of_post=post_id_for_replies).order_by(Comment.timestamp.desc()).all()  
     return render_template('home.html', posts=posts, title='Home', form=form, comment_form=comment_form, replies=replies)
 
 @app.route("/post/new", methods=['GET', 'POST'])
@@ -83,8 +84,9 @@ def home():
 def new_post():
     form = PostForm()
     if form.validate_on_submit():
-        id_of_post = add_post_in_post_tab_and_get_post_id(form, current_user)
-        
+        get_id_of_post = add_post_in_post_tab_and_get_post_id(form, current_user)
+        session['return_id_of_post'] = get_id_of_post
+       
         return redirect(url_for('home'))
     return render_template('create_post.html', title='New Post',
                            form=form, legend='New Post')
